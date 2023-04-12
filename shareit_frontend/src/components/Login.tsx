@@ -19,7 +19,7 @@ const Login = () => {
       const doc = {
         _id: googleId,
         _type: "user",
-        name: name,
+        userName: name,
         image: picture,
       };
       client.createIfNotExists(doc).then(() => {
