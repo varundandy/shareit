@@ -4,9 +4,14 @@ import logo from "../assets/logowhite.png";
 import { useGoogleLogin } from "@react-oauth/google";
 import { client } from "../client";
 import { redirect, useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import UserContext from "../store/UserContext";
+import { User, UserInfo } from "../types/interface";
+import { userQuery } from "../utils/data";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { setUser } = useContext(UserContext);
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       console.log(tokenResponse);
@@ -14,7 +19,8 @@ const Login = () => {
         `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenResponse.access_token}`
       );
       const profileInfo = await response.json();
-      window.localStorage.setItem("user", JSON.stringify(profileInfo));
+      const userObj = JSON.stringify(profileInfo);
+      localStorage.setItem("user", userObj);
       const { name, sub: googleId, picture } = profileInfo;
       const doc = {
         _id: googleId,
@@ -22,9 +28,14 @@ const Login = () => {
         userName: name,
         image: picture,
       };
-      client.createIfNotExists(doc).then(() => {
-        navigate("/", { replace: true });
+      client.createIfNotExists(doc).then((data) => {
+        console.log("User Created in Sanity");
+        console.log(data);
       });
+      const query = userQuery(profileInfo?.sub);
+      const data = await client.fetch(query);
+      await setUser(data[0]);
+      navigate("/", { replace: true });
     },
     onError: () => console.log("error"),
   });
